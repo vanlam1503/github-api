@@ -11,5 +11,7 @@ class MyViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        print(APIConfig.baseURL)
     }
 }
