@@ -12,3 +12,4 @@ QUE_APP_NAME = QueProject (dev)
 QUE_APP_VERSION = 1.0
 QUE_APP_BUNDLE_ID = com.que.QueProject.Debug
 QUE_APP_ICON = AppIconDebug
+BASE_URL = https:/$()/api.github.dev.com
