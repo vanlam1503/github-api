@@ -6,3 +6,8 @@
 //
 
 import Foundation
+
+struct APIConfig {
+    @BundleProperty(key: "BaseURL")
+    static var baseURL: String
+}

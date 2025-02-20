@@ -12,3 +12,4 @@ QUE_APP_NAME = QueProject
 QUE_APP_VERSION = 1.0
 QUE_APP_BUNDLE_ID = com.que.QueProject.Release
 QUE_APP_ICON = AppIconRelease
+BASE_URL = https:/$()/api.github.com
