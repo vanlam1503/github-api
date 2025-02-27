@@ -7,15 +7,25 @@
 
 import Foundation
 
-final class UserService {
+protocol UserServiceProtocol {
+    func getListUser() async throws -> [User]
+    func getUserDetail(id: Int) async throws -> User
+}
+
+final class UserService: UserServiceProtocol {
     
     static let shared = UserService()
+    private let apiService: APIServiceProtocol
+    
+    init(apiService: APIServiceProtocol = APIService.shared) {
+        self.apiService = apiService
+    }
     
     func getListUser() async throws -> [User] {
-        return try await APIService.shared.requestAPI(request: .getList, responseType: [User].self)
+        return try await apiService.requestAPI(request: .getList, responseType: [User].self)
     }
     
     func getUserDetail(id: Int) async throws -> User {
-        return try await APIService.shared.requestAPI(request: .getDetail(id: id), responseType: User.self)
+        return try await apiService.requestAPI(request: .getDetail(id: id), responseType: User.self)
     }
 }

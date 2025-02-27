@@ -10,18 +10,25 @@ import Alamofire
 
 final class ListOfUserViewController: UIViewController {
     
-    @IBOutlet private var collectionView: UICollectionView!
+    @IBOutlet private weak var collectionView: UICollectionView!
     
-    var users: [User] = []
+    var viewModel: ListOfUserViewModel
+    
+    init(viewModel: ListOfUserViewModel) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         title = "List of user"
         configCollectionView()
-        Task {
-            await fetchUser()
-        }
+        fetchUsers()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -44,32 +51,16 @@ final class ListOfUserViewController: UIViewController {
         collectionView.collectionViewLayout = layout
     }
     
-    private func fetchUser() async {
-        do {
-            users = try await UserService.shared.getListUser()
-            DispatchQueue.main.async {
-                self.collectionView.reloadData()
-            }
-        } catch let error as NetworkError {
-            DispatchQueue.main.async {
-                self.showErrorAlert(error: error)
-            }
-        } catch {
-            DispatchQueue.main.async {
-                self.showErrorAlert(message: "An unknown error occurred.")
+    private func fetchUsers() {
+        viewModel.fetchUsers { [weak self] result in
+            guard let this = self else { return }
+            switch result {
+            case .success:
+                this.collectionView.reloadData()
+            case .failure(let error):
+                this.viewModel.errorService.showError(from: this, error: error)
             }
         }
-    }
-    
-    private func showErrorAlert(error: NetworkError) {
-        var message: String
-        switch error {
-        case .badResponse(let errorMessage):
-            message = errorMessage
-        default:
-            message = "Something went wrong"
-        }
-        showErrorAlert(message: message)
     }
 
     private func showErrorAlert(message: String) {
@@ -81,12 +72,12 @@ final class ListOfUserViewController: UIViewController {
 
 extension ListOfUserViewController: UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return users.count
+        return viewModel.numberOfitems()
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath) as! UserCollectionViewCell
-        cell.updateUI(urlString: users[indexPath.row].avatar ?? "")
+        cell.updateUI(urlString: viewModel.getUserAvatarString(at: indexPath.row))
         return cell
     }
 }

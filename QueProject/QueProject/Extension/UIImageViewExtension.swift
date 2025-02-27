@@ -9,9 +9,14 @@ import Alamofire
 import UIKit
 
 extension UIImageView {
+    private static let imageCache = NSCache<NSString, UIImage>()
+    
     func loadImage(from urlString: String) {
-        guard let url = URL(string: urlString) else {
-            print("Invalid URL")
+        guard let url = URL(string: urlString) else { return }
+        
+        let cacheKey = urlString as NSString
+        if let cachedImage = UIImageView.imageCache.object(forKey: cacheKey) {
+            self.image = cachedImage
             return
         }
         
@@ -19,14 +24,14 @@ extension UIImageView {
             switch response.result {
             case .success(let data):
                 if let image = UIImage(data: data) {
+                    UIImageView.imageCache.setObject(image, forKey: cacheKey)
+                    
                     DispatchQueue.main.async {
                         self?.image = image
                     }
-                } else {
-                    print("Error: Unable to create image from data")
                 }
             case .failure(let error):
-                print("Error loading image: \(error.localizedDescription)")
+                print("Error: \(error.localizedDescription)")
             }
         }
     }

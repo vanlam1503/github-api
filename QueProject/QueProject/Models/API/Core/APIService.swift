@@ -8,6 +8,10 @@
 import Foundation
 import Alamofire
 
+protocol APIServiceProtocol {
+    func requestAPI<T: Decodable>(request: APIRequest, responseType: T.Type) async throws -> T
+}
+
 enum HTTPMethod: String {
     case get = "GET"
     case post = "POST"
@@ -44,7 +48,7 @@ enum APIRequest {
         }
     }
     
-    func mapToRequest() -> URLConvertible {
+    func makeRequestURL() -> URLConvertible {
         let urlString = baseURL + path
         guard let url = URL(string: urlString) else {
             fatalError("Invalid URL")
@@ -54,21 +58,43 @@ enum APIRequest {
 }
 
 enum NetworkError: Error {
-    case badRequest
-    case badResponse(message: String)
+    case unknowError
+    case errorFromSever(statusCode: Int, message: String)
+    case badResponse
     case failedToDecodeResponse
     case requestFailed(Error)
+    case severError(statusCode: Int)
+    
+    var errorMessage: String {
+        switch self {
+        case .errorFromSever(let statusCode, let message):
+            return "Status Code: \(statusCode) \n \(message)"
+        case .severError(let statusCode):
+            return "Status Code: \(statusCode) \n Server Error"
+        case .failedToDecodeResponse:
+            return "Failed to decode response"
+        case .badResponse:
+            return "Bad response"
+        case .requestFailed(let error):
+            return error.localizedDescription
+        default:
+            return "Unknown Error"
+        }
+    }
 }
 
-final class APIService {
+final class APIService: APIServiceProtocol {
+    
     static let shared = APIService()
+    
+    init() {}
     
     func requestAPI<T: Decodable>(
         request: APIRequest,
         responseType: T.Type
     ) async throws -> T {
         let method = Alamofire.HTTPMethod(rawValue: request.method.rawValue)
-        let url = request.mapToRequest()
+        let url = request.makeRequestURL()
         let parameters = request.parameters
         
         let (data, response) = try await performRequest(url: url, method: method, parameters: parameters)
@@ -89,7 +115,7 @@ final class APIService {
                     if let httpResponse = response.response {
                         continuation.resume(returning: (data, httpResponse))
                     } else {
-                        continuation.resume(throwing: NetworkError.badRequest)
+                        continuation.resume(throwing: NetworkError.badResponse)
                     }
                 case .failure(let error):
                     continuation.resume(throwing: NetworkError.requestFailed(error))
@@ -99,13 +125,20 @@ final class APIService {
     }
     
     private func validateResponse(_ response: HTTPURLResponse, data: Data) throws {
-        print(response.statusCode)
-        guard (200...299).contains(response.statusCode) else {
-            if let errorResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let message = errorResponse["message"] as? String {
-                throw NetworkError.badResponse(message: message)
+        let statusCode = response.statusCode
+        switch statusCode {
+        case 200...299: return
+        case 500...599:
+            throw NetworkError.severError(statusCode: statusCode)
+        default:
+            var serverMessage: String {
+                if let errorResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                let message = errorResponse["message"] as? String {
+                    return message
+                }
+                return "Unknown error"
             }
-            throw NetworkError.badResponse(message: "Unknown error")
+            throw NetworkError.errorFromSever(statusCode: statusCode, message: serverMessage)
         }
     }
     
