@@ -32,7 +32,9 @@ final class ListOfUserViewModel {
                     completion(.success)
                 }
             } catch let error as NetworkError {
-                completion(.failure(error))
+                DispatchQueue.main.async {
+                    completion(.failure(error))
+                }
             }
         }
     }

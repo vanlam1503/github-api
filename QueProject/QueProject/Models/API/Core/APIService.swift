@@ -64,6 +64,8 @@ enum NetworkError: Error {
     case failedToDecodeResponse
     case requestFailed(Error)
     case severError(statusCode: Int)
+    case noInternetConnection
+    case timeout
     
     var errorMessage: String {
         switch self {
@@ -77,6 +79,10 @@ enum NetworkError: Error {
             return "Bad response"
         case .requestFailed(let error):
             return error.localizedDescription
+        case .noInternetConnection:
+            return "No internet connection"
+        case .timeout:
+            return "Request timeout"
         default:
             return "Unknown Error"
         }
@@ -97,9 +103,7 @@ final class APIService: APIServiceProtocol {
         let url = request.makeRequestURL()
         let parameters = request.parameters
         
-        let (data, response) = try await performRequest(url: url, method: method, parameters: parameters)
-        try validateResponse(response, data: data)
-        
+        let (data, _) = try await performRequest(url: url, method: method, parameters: parameters)
         return try decodeData(data: data, to: T.self)
     }
     
@@ -113,12 +117,18 @@ final class APIService: APIServiceProtocol {
                 switch response.result {
                 case .success(let data):
                     if let httpResponse = response.response {
-                        continuation.resume(returning: (data, httpResponse))
+                        do {
+                            try self.validateResponse(httpResponse, data: data)
+                            continuation.resume(returning: (data, httpResponse))
+                        } catch {
+                            continuation.resume(throwing: NetworkError.badResponse)
+                        }
                     } else {
                         continuation.resume(throwing: NetworkError.badResponse)
                     }
                 case .failure(let error):
-                    continuation.resume(throwing: NetworkError.requestFailed(error))
+                    let networkError = self.handleNetworkError(error: error)
+                    continuation.resume(throwing: networkError)
                 }
             }
         }
@@ -140,6 +150,21 @@ final class APIService: APIServiceProtocol {
             }
             throw NetworkError.errorFromSever(statusCode: statusCode, message: serverMessage)
         }
+    }
+    
+    private func handleNetworkError(error: AFError) -> NetworkError {
+        if let urlError = error.underlyingError as? URLError {
+            print("URLError code:", urlError.code.rawValue)
+            switch urlError.code {
+            case .notConnectedToInternet:
+                return .noInternetConnection
+            case .timedOut:
+                return .timeout
+            default:
+                return .requestFailed(error)
+            }
+        }
+        return .requestFailed(error)
     }
     
     private func decodeData<T: Decodable>(data: Data, to type: T.Type) throws -> T {
