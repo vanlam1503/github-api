@@ -1,8 +1,8 @@
 //
 //  SceneDelegate.swift
-//  github-api
+//  HaProject
 //
-//  Created by LamLe on 2/13/25.
+//  Created by TrongQue on 19/2/25.
 //
 
 import UIKit

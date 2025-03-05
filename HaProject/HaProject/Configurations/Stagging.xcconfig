@@ -1,0 +1,14 @@
+//
+//  Stagging.xcconfig
+//  HaProject
+//
+//  Created by TrongQue on 19/2/25.
+//
+
+// Configuration settings file format documentation can be found at:
+// https://help.apple.com/xcode/#/dev745c5c974
+APP_NAME = HaProject (STG)
+APP_BUNDLE_IDENTIFIER = com.ha.project.stg
+MARKETING_VERSION = 0.1
+APP_ICON = AppIconSTG
+BASE_URL = "https://api.github.stg.com"

@@ -1,8 +1,8 @@
 //
 //  ViewController.swift
-//  github-api
+//  HaProject
 //
-//  Created by LamLe on 2/13/25.
+//  Created by Ha on 2/13/25.
 //
 
 import UIKit
@@ -13,7 +13,5 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
     }
-
-
 }
 

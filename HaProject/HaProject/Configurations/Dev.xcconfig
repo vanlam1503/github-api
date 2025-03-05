@@ -1,0 +1,14 @@
+//
+//  Dev.xcconfig
+//  HaProject
+//
+//  Created by TrongQue on 19/2/25.
+//
+
+// Configuration settings file format documentation can be found at:
+// https://help.apple.com/xcode/#/dev745c5c974
+APP_NAME = HaProject (DEV)
+APP_BUNDLE_IDENTIFIER = com.ha.project.dev
+MARKETING_VERSION = 0.1
+APP_ICON = AppIconDEV
+BASE_URL = "https://api.github.dev.com"
